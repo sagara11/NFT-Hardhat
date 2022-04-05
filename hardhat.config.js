@@ -17,13 +17,17 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
-  defaultNetwork: "rinkeby",
+  defaultNetwork: "develop",
   networks: {
     hardhat: {},
+    develop: {
+      url: "http://127.0.0.1:8545/",
+      chainId: 31337
+    },
     rinkeby: {
       url: "https://speedy-nodes-nyc.moralis.io/7b7b771ec8da4cf1d3ef4985/eth/rinkeby",
       accounts: [
-        "0x0e5821b834f5b5cb9b2453dac973efbb1fbbc39a68cbb0e9ed36085498cac0ee",
+        "0xf4e463dd5eb366263e26d9444d25d0b57ddecfacd0c1794a651febc3ea2c313e",
       ],
     },
   },
