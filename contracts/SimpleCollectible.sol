@@ -29,7 +29,9 @@ contract SimpleCollectible is ERC721 {
         uint256 newTokenId = tokenCounter;
         _safeMint(msg.sender, newTokenId);
         _setTokenURI(newTokenId, tokenURI);
-        TokenIdToPrice[newTokenId] = (1 * Decimals()) / (10 * Decimals());
+        TokenIdToPrice[newTokenId] =
+            ((1 * Decimals()) / (100 * Decimals())) *
+            Decimals();
         tokenCounter += 1;
         return newTokenId;
     }

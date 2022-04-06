@@ -5,10 +5,10 @@ import artifacts from "./contracts/SimpleCollectible.json";
 import axios from "axios";
 import { useEffect, useState } from "react";
 
-const init = async (setNFTs) => {
+const init = async (setNFTs, setContract, setSigner) => {
   const provider = new ethers.providers.Web3Provider(window.ethereum);
   const signer = await provider.getSigner();
-  const myAddress = await signer.getAddress();
+  // const myAddress = await signer.getAddress();
   // await provider.getBlockNumber()
   const simpleCollectibleAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
   const simpleCollectibleABI = artifacts.abi;
@@ -31,19 +31,34 @@ const init = async (setNFTs) => {
     const ownerOf = await simpleCollectibleContract.ownerOf(tokenId.toString());
     let object = await axios.get(NFTTokenURIs);
 
-    object.data = { ...object.data, ownerAddress: ownerOf };
+    object.data = {
+      ...object.data,
+      ownerAddress: ownerOf,
+      tokenId: tokenId.toString(),
+    };
     NFTs.push(object.data);
   }
   setNFTs(NFTs);
+  setContract(simpleCollectibleContract);
+  setSigner(signer);
   console.log(NFTs);
 };
 
 function App() {
   const [NFTs, setNFTs] = useState([]);
+  const [contract, setContract] = useState("");
+  const [signer, setSigner] = useState("");
 
   useEffect(() => {
-    init(setNFTs);
+    init(setNFTs, setContract, setSigner);
   }, []);
+
+  const handleBuyNFT = async (tokenId) => {
+    const eth = ethers.utils.parseEther("1.0");
+    await contract.connect(signer).purchaseNFT(tokenId, { value: eth });
+
+    
+  };
 
   const renderCard = () => {
     return NFTs.map((item, index) => {
@@ -82,11 +97,17 @@ function App() {
                 </ul>
               </div>
               <p>{item.description}</p>
-              <p>{item.ownerAddress}</p>
+              <p className="owner-address">{item.ownerAddress}</p>
               <p className="item-price">
                 <strike>5ETH</strike> <b>0.1ETH</b>
               </p>
-              <a href="#" className="btn btn-primary">
+              <a
+                href="#"
+                className="btn btn-primary"
+                onClick={() => {
+                  handleBuyNFT(item.tokenId);
+                }}
+              >
                 Buy
               </a>
             </div>

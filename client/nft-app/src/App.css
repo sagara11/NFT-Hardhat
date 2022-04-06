@@ -159,3 +159,7 @@ h2::after {
 	font-size: 14px;
 	color: #ffc000;
 }
+
+.owner-address {
+	font-size: 11px;
+}
