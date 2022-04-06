@@ -1,4 +1,5 @@
 require("@nomiclabs/hardhat-waffle");
+require("@nomiclabs/hardhat-etherscan");
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -30,6 +31,11 @@ module.exports = {
         "0xf4e463dd5eb366263e26d9444d25d0b57ddecfacd0c1794a651febc3ea2c313e",
       ],
     },
+  },
+  etherscan: {
+    // Your API key for Etherscan
+    // Obtain one at https://etherscan.io/
+    apiKey: "2RTSC4A1N2KT8UTNGQBJPX7GD9HS6PBVUH"
   },
   solidity: {
     version: "0.6.2",
