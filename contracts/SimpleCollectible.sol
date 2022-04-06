@@ -6,14 +6,15 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 contract SimpleCollectible is ERC721 {
     uint256 public tokenCounter;
     mapping(uint256 => uint256) TokenIdToPrice;
+
     event Purchase(
         address _from,
         address _to,
         uint256 _tokenId,
-        uint256 _amount
+        uint256 _amounty
     );
 
-    constructor() public ERC721("Dogie", "DOG") {
+    constructor() public ERC721("Savvycom", "SCN") {
         tokenCounter = 0;
     }
 
