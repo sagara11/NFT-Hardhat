@@ -1,6 +1,35 @@
 import React from "react";
 import Cookies from "js-cookie";
 function Header() {
+  const renderButtonConnect = () => {
+    if (!Cookies.get("UserAddress")) {
+      return (
+        <button
+          onClick={() => {
+            checkWalletIsConnected();
+          }}
+          className="btn btn-outline-success my-2 my-sm-0"
+          type="submit"
+        >
+          Connect wallet
+        </button>
+      );
+    } else {
+      return (
+        <button
+          onClick={() => {
+            navigator.clipboard.writeText(Cookies.get("UserAddress"));
+          }}
+          className="btn btn-outline-success my-2 my-sm-0"
+        >
+          {Cookies.get("UserAddress")?.substring(0, 6)}...
+          {Cookies.get("UserAddress")?.substring(
+            Cookies.get("UserAddress").length - 4
+          )}
+        </button>
+      );
+    }
+  };
   const checkWalletIsConnected = async (profile) => {
     const { ethereum } = window;
 
@@ -13,6 +42,7 @@ function Header() {
         method: "eth_requestAccounts",
       });
 
+      console.log(accounts)
       Cookies.set("UserAddress", accounts[0]);
       // Cookies.get('UserAddress')
 
@@ -82,15 +112,7 @@ function Header() {
             </li>
           </ul>
           <form className="form-inline my-2 my-lg-0">
-            <button
-              onClick={() => {
-                checkWalletIsConnected();
-              }}
-              className="btn btn-outline-success my-2 my-sm-0"
-              type="submit"
-            >
-              Connect wallet
-            </button>
+            {renderButtonConnect()}
           </form>
         </div>
       </nav>

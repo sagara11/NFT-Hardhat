@@ -4,10 +4,12 @@ import { ethers } from "ethers";
 import artifacts from "./contracts/SimpleCollectible.json";
 import axios from "axios";
 import { useEffect, useState } from "react";
+import Cookies from "js-cookie";
 
 const init = async (setNFTs, setContract, setSigner) => {
   const provider = new ethers.providers.Web3Provider(window.ethereum);
   const signer = await provider.getSigner();
+
   // const myAddress = await signer.getAddress();
   // await provider.getBlockNumber()
   const simpleCollectibleAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
@@ -29,35 +31,135 @@ const init = async (setNFTs, setContract, setSigner) => {
       tokenId.toString()
     );
     const ownerOf = await simpleCollectibleContract.ownerOf(tokenId.toString());
+    const authorization = await simpleCollectibleContract.getApproved(
+      tokenId.toString()
+    );
     let object = await axios.get(NFTTokenURIs);
 
     object.data = {
       ...object.data,
       ownerAddress: ownerOf,
       tokenId: tokenId.toString(),
+      authorization: authorization,
     };
     NFTs.push(object.data);
   }
   setNFTs(NFTs);
   setContract(simpleCollectibleContract);
   setSigner(signer);
-  console.log(NFTs);
 };
 
 function App() {
   const [NFTs, setNFTs] = useState([]);
   const [contract, setContract] = useState("");
   const [signer, setSigner] = useState("");
+  const [signerAddress, setSignerAddress] = useState(
+    Cookies.get("UserAddress")
+  );
 
   useEffect(() => {
     init(setNFTs, setContract, setSigner);
   }, []);
 
+  window.ethereum.on("accountsChanged", function (accounts) {
+    setSignerAddress(accounts[0]);
+    Cookies.set("UserAddress", accounts[0]);
+  });
+
   const handleBuyNFT = async (tokenId) => {
     const eth = ethers.utils.parseEther("1.0");
-    await contract.connect(signer).purchaseNFT(tokenId, { value: eth });
+    const tx = await contract
+      .connect(signer)
+      .purchaseNFT(tokenId, { value: eth });
+    await tx.wait(1);
+    window.location.reload();
+  };
 
-    
+  const handleSellNFT = async (
+    tokenId,
+    signer,
+    signerAddress,
+    ownerAddress
+  ) => {
+    let tx;
+    if (signerAddress.toLowerCase() === ownerAddress.toLowerCase()) {
+      tx = await contract
+        .connect(signer)
+        .transferFrom(
+          signerAddress,
+          "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+          tokenId
+        );
+    } else {
+      tx = await contract
+        .connect(signer)
+        .transferFrom(
+          ownerAddress,
+          "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+          tokenId
+        );
+    }
+    await tx.wait(1);
+    window.location.reload();
+  };
+
+  const handleAuthorize = async (tokenId, signer) => {
+    const tx = await contract
+      .connect(signer)
+      .approve("0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC", tokenId);
+    await tx.wait(1);
+    console.log(
+      "Owner approve Client 2 to manage the NFT has tokenId = ",
+      tokenId
+    );
+    window.location.reload();
+  };
+
+  const renderAuthorize = (signerAddress, signer, ownerAddress, item) => {
+    if (signerAddress.toLowerCase() === ownerAddress.toLowerCase()) {
+      return (
+        <a
+          href="#"
+          className="btn btn-primary"
+          onClick={() => {
+            handleAuthorize(item.tokenId, signer);
+          }}
+        >
+          Authorize
+        </a>
+      );
+    }
+  };
+
+  const renderSend = (signerAddress, signer, ownerAddress, item) => {
+    if (
+      signerAddress.toLowerCase() === ownerAddress.toLowerCase() ||
+      item.authorization !== "0x0000000000000000000000000000000000000000"
+    ) {
+      return (
+        <a
+          href="#"
+          className="btn btn-primary"
+          onClick={() => {
+            handleSellNFT(item.tokenId, signer, signerAddress, ownerAddress);
+          }}
+        >
+          Sell
+        </a>
+      );
+    } else {
+      return (
+        <a
+          href="#"
+          className="btn btn-primary"
+          onClick={() => {
+            handleBuyNFT(item.tokenId);
+          }}
+        >
+          Buy
+        </a>
+      );
+    }
   };
 
   const renderCard = () => {
@@ -101,26 +203,24 @@ function App() {
               <p className="item-price">
                 <strike>5ETH</strike> <b>0.1ETH</b>
               </p>
-              <a
-                href="#"
-                className="btn btn-primary"
-                onClick={() => {
-                  handleBuyNFT(item.tokenId);
-                }}
-              >
-                Buy
-              </a>
+              {renderAuthorize(signerAddress, signer, item.ownerAddress, item)}
+              {renderSend(signerAddress, signer, item.ownerAddress, item)}
+              <div className="authorization">
+                <label>Authorize</label>
+                <p className="owner-address">{item.authorization}</p>
+              </div>
             </div>
           </div>
         </div>
       );
     });
   };
+
   return (
     <div>
       <Header></Header>
-      <section classname="section-products">
-        <div classname="container">
+      <section className="section-products">
+        <div className="container">
           <div className="row">
             <div className="col-md-12">
               <h2>
