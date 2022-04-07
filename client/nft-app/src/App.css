@@ -162,4 +162,10 @@ h2::after {
 
 .owner-address {
 	font-size: 11px;
+	overflow: hidden;
+	color: #78bf00;
+}
+
+.authorization {
+	margin-top: 20px;
 }

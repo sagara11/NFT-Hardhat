@@ -9,7 +9,7 @@ const simple_token_uri = [
 ];
 
 async function main() {
-  const [owner, client1, client2] = await ethers.getSigners();
+  const [signer, client1, client2, client3] = await ethers.getSigners();
   const SimpleCollectible = await hre.ethers.getContractFactory(
     "SimpleCollectible"
   );
@@ -45,16 +45,43 @@ async function main() {
   );
   const [_from, _to, _tokenId, _amount] = eventPurchaseNFT.args;
   console.log(_from, _to, _tokenId.toString(), _amount.toString());
+  console.log("Client 1 Bought the NFT has tokenId = ", _tokenId.toString());
 
-  console.log(
-    await simpleCollectible.ownerOf(0),
-    await simpleCollectible.ownerOf(1),
-    await simpleCollectible.ownerOf(2)
+  // Sell NFT
+  const txSellSolely = await simpleCollectible.transferFrom(
+    signer.address,
+    client3.address,
+    2
   );
+  await txSellSolely.wait(1);
+  console.log("Owner sell Client3 the tokenId =", 2);
+
+  // Owner approve Client 2 to manage tokenId = 1
+  const txApproveNFT = await simpleCollectible.approve(client2.address, 1);
+  const rcApproveNFT = await txApproveNFT.wait(1);
+  const eventApproveNFT = rcApproveNFT.events.find(
+    (event) => event.event === "Approval"
+  );
+  const [owner, approved, tokenId] = eventApproveNFT.args;
+  console.log(owner, approved, tokenId.toString());
+  console.log(
+    "Owner approve Client 2 to manage the NFT has tokenId = ",
+    tokenId.toString()
+  );
+
+  // Client 2 sell tokenId = 1 to Client 3 through authorization of signer
+  const txSellNFT = await simpleCollectible
+    .connect(client2)
+    .transferFrom(signer.address, client3.address, 1);
+  const rcSellNFT = await txSellNFT.wait(1);
+  const eventSellNFT = rcSellNFT.events.find(
+    (event) => event.event === "Transfer"
+  );
+  const [from, to] = eventSellNFT.args;
+  console.log(from, to, 1);
+  console.log("Client 2 sold Client 3 the NFT has tokenId = ", 1);
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
 main()
   .then(() => process.exit(0))
   .catch((error) => {
