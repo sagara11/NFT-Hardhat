@@ -12,7 +12,7 @@ const init = async (setNFTs, setContract, setSigner, setMyNFTs) => {
 
   // const myAddress = await signer.getAddress();
   // await provider.getBlockNumber()
-  const simpleCollectibleAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+  const simpleCollectibleAddress = "0x00FFc6d5d3888d6d281ec878d8c502d91Bf1cCD2";
   const simpleCollectibleABI = artifacts.abi;
   const simpleCollectibleContract = new ethers.Contract(
     simpleCollectibleAddress,
