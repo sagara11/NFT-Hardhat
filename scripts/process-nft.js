@@ -61,7 +61,7 @@ async function main() {
   // Buy NFT
   const txPurchaseNFT = await simpleCollectible
     .connect(client1)
-    .purchaseNFT(0, { value: ethers.utils.parseEther("1.0") });
+    .purchaseNFT(0, { value: ethers.utils.parseEther("0.01") });
   const rcPurchaseNFT = await txPurchaseNFT.wait(1);
   const eventPurchaseNFT = rcPurchaseNFT.events.find(
     (event) => event.event === "Purchase"

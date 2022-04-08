@@ -1,6 +1,8 @@
 require("@nomiclabs/hardhat-waffle");
 require("@nomiclabs/hardhat-etherscan");
 
+require("dotenv").config();
+
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
 task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
@@ -23,19 +25,22 @@ module.exports = {
     hardhat: {},
     develop: {
       url: "http://127.0.0.1:8545/",
-      chainId: 31337
+      chainId: 31337,
     },
     rinkeby: {
-      url: "https://speedy-nodes-nyc.moralis.io/7b7b771ec8da4cf1d3ef4985/eth/rinkeby",
+      url: process.env.RINKEBY_MORALIS,
       accounts: [
-        "0xf4e463dd5eb366263e26d9444d25d0b57ddecfacd0c1794a651febc3ea2c313e",
+        process.env.PRIVATE_KEY_OWNER,
+        process.env.PRIVATE_KEY_ACCOUNT_1,
+        process.env.PRIVATE_KEY_ACCOUNT_2,
+        process.env.PRIVATE_KEY_ACCOUNT_3,
       ],
     },
   },
   etherscan: {
     // Your API key for Etherscan
     // Obtain one at https://etherscan.io/
-    apiKey: "2RTSC4A1N2KT8UTNGQBJPX7GD9HS6PBVUH"
+    apiKey: process.env.ETHERSCAN_API_KEY,
   },
   solidity: {
     version: "0.6.2",
