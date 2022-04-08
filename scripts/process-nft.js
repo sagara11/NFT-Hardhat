@@ -35,6 +35,29 @@ async function main() {
   //   "Please wait up to 20 minutes, and hit the refresh metadata button. "
   // );
 
+  // Get all token ownen by owner
+  const balanceOf = (
+    await simpleCollectible.balanceOf(signer.address)
+  ).toString();
+  const tokenIdsOfOwner = [];
+  for (let i = 0; i < balanceOf; i++) {
+    const tokenId = await simpleCollectible.tokenOfOwnerByIndex(
+      signer.address,
+      i
+    );
+    tokenIdsOfOwner.push(tokenId.toString());
+  }
+  console.log(tokenIdsOfOwner);
+
+  // Get all tokenId
+  const totalSupply = await simpleCollectible.totalSupply();
+  const allTokenIds = [];
+  for (let i = 0; i < totalSupply; i++) {
+    const tokenId = await simpleCollectible.tokenByIndex(i);
+    allTokenIds.push(tokenId.toString());
+  }
+  console.log(allTokenIds);
+
   // Buy NFT
   const txPurchaseNFT = await simpleCollectible
     .connect(client1)

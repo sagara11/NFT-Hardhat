@@ -6,7 +6,7 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import Cookies from "js-cookie";
 
-const init = async (setNFTs, setContract, setSigner) => {
+const init = async (setNFTs, setContract, setSigner, setMyNFTs) => {
   const provider = new ethers.providers.Web3Provider(window.ethereum);
   const signer = await provider.getSigner();
 
@@ -44,13 +44,40 @@ const init = async (setNFTs, setContract, setSigner) => {
     };
     NFTs.push(object.data);
   }
+
+  const signerAddress = await signer.getAddress();
+  const balanceOf = (
+    await simpleCollectibleContract.balanceOf(signerAddress)
+  ).toString();
+
+  let MyNFTs = [];
+  for (let i = 0; i < balanceOf; i++) {
+    const tokenId = await simpleCollectibleContract.tokenOfOwnerByIndex(
+      signerAddress,
+      i
+    );
+    const NFTTokenURIs = await simpleCollectibleContract.tokenURI(
+      tokenId.toString()
+    );
+
+    let object = await axios.get(NFTTokenURIs);
+
+    object.data = {
+      ...object.data,
+      tokenId: tokenId.toString(),
+    };
+    MyNFTs.push(object.data);
+  }
+
   setNFTs(NFTs);
+  setMyNFTs(MyNFTs);
   setContract(simpleCollectibleContract);
   setSigner(signer);
 };
 
 function App() {
   const [NFTs, setNFTs] = useState([]);
+  const [MyNFTs, setMyNFTs] = useState([]);
   const [contract, setContract] = useState("");
   const [signer, setSigner] = useState("");
   const [signerAddress, setSignerAddress] = useState(
@@ -58,12 +85,13 @@ function App() {
   );
 
   useEffect(() => {
-    init(setNFTs, setContract, setSigner);
+    init(setNFTs, setContract, setSigner, setMyNFTs);
   }, []);
 
   window.ethereum.on("accountsChanged", function (accounts) {
     setSignerAddress(accounts[0]);
     Cookies.set("UserAddress", accounts[0]);
+    window.location.reload();
   });
 
   const handleBuyNFT = async (tokenId) => {
@@ -162,7 +190,7 @@ function App() {
     }
   };
 
-  const renderCard = () => {
+  const renderCard = (NFTs, isNFT) => {
     return NFTs.map((item, index) => {
       return (
         <div key={index} className="col-sm-3">
@@ -199,15 +227,17 @@ function App() {
                 </ul>
               </div>
               <p>{item.description}</p>
-              <p className="owner-address">{item.ownerAddress}</p>
+              <p className="owner-address">{isNFT && item.ownerAddress}</p>
               <p className="item-price">
                 <strike>5ETH</strike> <b>0.1ETH</b>
               </p>
-              {renderAuthorize(signerAddress, signer, item.ownerAddress, item)}
-              {renderSend(signerAddress, signer, item.ownerAddress, item)}
+              {isNFT &&
+                renderAuthorize(signerAddress, signer, item.ownerAddress, item)}
+              {isNFT &&
+                renderSend(signerAddress, signer, item.ownerAddress, item)}
               <div className="authorization">
-                <label>Authorize</label>
-                <p className="owner-address">{item.authorization}</p>
+                {isNFT && <label>Authorize</label>}
+                <p className="owner-address">{isNFT && item.authorization}</p>
               </div>
             </div>
           </div>
@@ -245,7 +275,50 @@ function App() {
                 {/* Wrapper for carousel items */}
                 <div className="carousel-inner">
                   <div className="item carousel-item active">
-                    <div className="row">{renderCard()}</div>
+                    <div className="row">{renderCard(NFTs, true)}</div>
+                  </div>
+                </div>
+                {/* Carousel controls */}
+                <a
+                  className="carousel-control-prev"
+                  href="#myCarousel"
+                  data-slide="prev"
+                >
+                  <i className="fa fa-angle-left" />
+                </a>
+                <a
+                  className="carousel-control-next"
+                  href="#myCarousel"
+                  data-slide="next"
+                >
+                  <i className="fa fa-angle-right" />
+                </a>
+              </div>
+            </div>
+            <div className="col-md-12">
+              <h2>
+                My <b>NFT</b>
+              </h2>
+              <div
+                id="myCarousel"
+                className="carousel slide"
+                data-ride="carousel"
+                data-interval={0}
+              >
+                {/* Carousel indicators */}
+                <ol className="carousel-indicators">
+                  <li
+                    data-target="#myCarousel"
+                    data-slide-to={0}
+                    className="active"
+                  />
+                  <li data-target="#myCarousel" data-slide-to={1} />
+                  <li data-target="#myCarousel" data-slide-to={2} />
+                </ol>
+                {/* Wrapper for carousel items */}
+                <div className="carousel-inner">
+                  <div className="item carousel-item active">
+                    <div className="row d-lfex justify-content-center">{renderCard(MyNFTs, false)}</div>
                   </div>
                 </div>
                 {/* Carousel controls */}
