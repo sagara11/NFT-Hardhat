@@ -3,19 +3,20 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "../interface/wethToken.sol";
+import "../interface/StanTokenInterface.sol";
 
-contract StanNFT is ERC721URIStorage, Ownable {
+contract StanNFT is ERC721Enumerable, ERC721URIStorage, Ownable {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
 
     mapping(uint256 => uint256) TokenIdToPrice;
-    address public wethTokenAddress;
-    WethTokenInterface private wethToken;
     mapping(address => uint256) public balanceOfFan;
     mapping(uint160 => mapping(address => uint256)) private autionInformation;
+    address public tokenStanAddress;
+    StanTokenInterface private tokenStan;
 
     event Purchase(
         address _from,
@@ -24,24 +25,31 @@ contract StanNFT is ERC721URIStorage, Ownable {
         uint256 _amounty
     );
 
-    event Aution(address _sender, uint256 _bidnumer, uint256 _balanceOf);
+    event Winner(
+        address _winner,
+        uint256 _tokenId,
+        address _artist,
+        uint256 _bidNumber
+    );
 
-    constructor(address _wethToken) public ERC721("Stan", "STAN") {
-        wethToken = WethTokenInterface(_wethToken);
+    event Aution(address _sender, uint256 _bidnumer, uint160 _autionId);
+
+    constructor(address _tokenStan) ERC721("Stan", "STAN") {
+        tokenStan = StanTokenInterface(_tokenStan);
     }
 
     function Decimals() public pure returns (uint256) {
         return uint256(10**18);
     }
 
-    function createCollectible(string memory tokenURI)
+    function createCollectible(string memory _tokenURI)
         external
         onlyOwner
         returns (uint256)
     {
         uint256 newTokenId = _tokenIds.current();
         _safeMint(msg.sender, newTokenId);
-        _setTokenURI(newTokenId, tokenURI);
+        _setTokenURI(newTokenId, _tokenURI);
         TokenIdToPrice[newTokenId] =
             ((1 * Decimals()) / (1000 * Decimals())) *
             Decimals();
@@ -49,21 +57,8 @@ contract StanNFT is ERC721URIStorage, Ownable {
         return newTokenId;
     }
 
-    function setWethToken(address _wethToken) external onlyOwner {
-        wethToken = WethTokenInterface(_wethToken);
-    }
-
-    function purchaseNFT(uint256 _tokenId) external payable {
-        require(
-            msg.value >= TokenIdToPrice[_tokenId],
-            "Not enough fee to buy this NFT"
-        );
-
-        address owner = ownerOf(_tokenId);
-        _transfer(owner, msg.sender, _tokenId);
-        payable(owner).transfer(msg.value);
-
-        emit Purchase(owner, msg.sender, _tokenId, msg.value);
+    function settokenStan(address _tokenStan) external onlyOwner {
+        tokenStan = StanTokenInterface(_tokenStan);
     }
 
     function aution(
@@ -74,14 +69,14 @@ contract StanNFT is ERC721URIStorage, Ownable {
         if (balanceOfFan[_user] < _bidNumber) {
             uint256 additionalFee = _bidNumber - balanceOfFan[_user];
             require(
-                wethToken.transferFrom(_user, address(this), additionalFee),
+                tokenStan.transferFrom(_user, address(this), additionalFee),
                 "Not enough money to bid"
             );
             balanceOfFan[_user] += additionalFee;
         }
 
         autionInformation[_autionId][_user] = _bidNumber;
-        emit Aution(_user, _bidNumber, balanceOfFan[_user]);
+        emit Aution(_user, _bidNumber, _autionId);
     }
 
     function getWinner(
@@ -96,10 +91,51 @@ contract StanNFT is ERC721URIStorage, Ownable {
                 autionInformation[_autionId][_winner] == _bidNumber,
             "Invalid winner"
         );
+        require(
+            _isApprovedOrOwner(address(this), _tokenId),
+            "The artist didn't approve the NFT to StanNFT smart contract"
+        );
 
         // minus winner balance
         balanceOfFan[_winner] -= _bidNumber;
         // transfer NFT to winner
+        _transfer(address(this), _winner, _tokenId);
         // transfer token to artist
+        tokenStan.transfer(_artist, _bidNumber);
+
+        emit Winner(_winner, _tokenId, _artist, _bidNumber);
+    }
+
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 tokenId
+    ) internal override(ERC721, ERC721Enumerable) {
+        super._beforeTokenTransfer(from, to, tokenId);
+    }
+
+    function _burn(uint256 tokenId)
+        internal
+        override(ERC721, ERC721URIStorage)
+    {
+        super._burn(tokenId);
+    }
+
+    function tokenURI(uint256 tokenId)
+        public
+        view
+        override(ERC721, ERC721URIStorage)
+        returns (string memory)
+    {
+        return super.tokenURI(tokenId);
+    }
+
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        override(ERC721, ERC721Enumerable)
+        returns (bool)
+    {
+        return super.supportsInterface(interfaceId);
     }
 }

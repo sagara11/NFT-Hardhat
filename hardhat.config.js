@@ -27,8 +27,8 @@ module.exports = {
       url: "http://127.0.0.1:8545/",
       chainId: 31337,
     },
-    rinkeby: {
-      url: process.env.RINKEBY_MORALIS,
+    kovan: {
+      url: process.env.KOVAN_MORALIS,
       accounts: [
         process.env.PRIVATE_KEY_OWNER,
         process.env.PRIVATE_KEY_ACCOUNT_1,

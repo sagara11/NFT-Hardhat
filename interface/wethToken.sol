@@ -4,17 +4,17 @@ pragma solidity ^0.8.0;
 interface WethTokenInterface {
     function CHILD_CHAIN_ID() external view returns (uint256);
 
-    function CHILD_CHAIN_ID_BYTES() external view returns (bytes);
+    function CHILD_CHAIN_ID_BYTES() external view returns (bytes memory);
 
     function DEFAULT_ADMIN_ROLE() external view returns (bytes32);
 
     function DEPOSITOR_ROLE() external view returns (bytes32);
 
-    function ERC712_VERSION() external view returns (string);
+    function ERC712_VERSION() external view returns (string memory);
 
     function ROOT_CHAIN_ID() external view returns (uint256);
 
-    function ROOT_CHAIN_ID_BYTES() external view returns (bytes);
+    function ROOT_CHAIN_ID_BYTES() external view returns (bytes memory);
 
     function allowance(address owner, address spender)
         external
@@ -31,15 +31,15 @@ interface WethTokenInterface {
         external
         returns (bool);
 
-    function deposit(address user, bytes depositData) external;
+    function deposit(address user, bytes memory depositData) external;
 
     function executeMetaTransaction(
         address userAddress,
-        bytes functionSignature,
+        bytes memory functionSignature,
         bytes32 sigR,
         bytes32 sigS,
         uint8 sigV
-    ) external returns (bytes);
+    ) external returns (bytes memory);
 
     function getChainId() external pure returns (uint256);
 
@@ -67,13 +67,13 @@ interface WethTokenInterface {
         external
         returns (bool);
 
-    function name() external view returns (string);
+    function name() external view returns (string memory);
 
     function renounceRole(bytes32 role, address account) external;
 
     function revokeRole(bytes32 role, address account) external;
 
-    function symbol() external view returns (string);
+    function symbol() external view returns (string memory);
 
     function totalSupply() external view returns (uint256);
 
