@@ -8,101 +8,131 @@ const simple_token_uri = [
   "https://ipfs.io/ipfs/Qmd9MCGtdVz2miNumBHDbvj8bigSgTwnr4SbyH6DNnpWdt?filename=2-ST_BERNARD.json",
 ];
 
+LINKTOKEN = "0xa36085F69e2889c224210F603D836748e7dC0088";
+
 async function main() {
-  const [signer, client1, client2, client3] = await ethers.getSigners();
-  const SimpleCollectible = await hre.ethers.getContractFactory(
-    "SimpleCollectible"
-  );
-  const simpleCollectible = await SimpleCollectible.deploy();
+  const [signer, client1, client2, artist] = await ethers.getSigners();
 
-  await simpleCollectible.deployed();
+  const StanToken = await ethers.getContractFactory("StanToken");
+  const stanToken = await StanToken.deploy();
+  await stanToken.deployed();
+  console.log("StanToken deployed to:", stanToken.address);
 
-  console.log("SimpleCollectible deployed to:", simpleCollectible.address);
-  // Mint NFT
-  const tx_0 = await simpleCollectible.createCollectible(simple_token_uri[0]);
-  await tx_0.wait(1);
-  const tx_1 = await simpleCollectible.createCollectible(simple_token_uri[1]);
-  await tx_1.wait(1);
-  const tx_2 = await simpleCollectible.createCollectible(simple_token_uri[2]);
-  await tx_2.wait(1);
-  const tx_3 = await simpleCollectible.createCollectible(simple_token_uri[3]);
-  await tx_3.wait(1);
-  // const tokenId = (await simpleCollectible.tokenCounter()).toString() - 1;
-  // console.log(
-  //   `Awesome, you can use your NFT at https://testnets.opensea.io/assets/${simpleCollectible.address}/${tokenId}`
-  // );
-  // console.log(
-  //   "Please wait up to 20 minutes, and hit the refresh metadata button. "
-  // );
+  const StanNFT = await ethers.getContractFactory("StanNFT");
+  const stanNFT = await StanNFT.deploy(stanToken.address);
+  await stanNFT.deployed();
+  console.log("StanNFT deployed to:", stanNFT.address);
 
-  // Get all token ownen by owner
-  const balanceOf = (
-    await simpleCollectible.balanceOf(signer.address)
-  ).toString();
-  const tokenIdsOfOwner = [];
-  for (let i = 0; i < balanceOf; i++) {
-    const tokenId = await simpleCollectible.tokenOfOwnerByIndex(
-      signer.address,
-      i
-    );
-    tokenIdsOfOwner.push(tokenId.toString());
-  }
-  console.log(tokenIdsOfOwner);
-
-  // Get all tokenId
-  const totalSupply = await simpleCollectible.totalSupply();
-  const allTokenIds = [];
-  for (let i = 0; i < totalSupply; i++) {
-    const tokenId = await simpleCollectible.tokenByIndex(i);
-    allTokenIds.push(tokenId.toString());
-  }
-  console.log(allTokenIds);
-
-  // Buy NFT
-  const txPurchaseNFT = await simpleCollectible
-    .connect(client1)
-    .purchaseNFT(0, { value: ethers.utils.parseEther("0.01") });
-  const rcPurchaseNFT = await txPurchaseNFT.wait(1);
-  const eventPurchaseNFT = rcPurchaseNFT.events.find(
-    (event) => event.event === "Purchase"
-  );
-  const [_from, _to, _tokenId, _amount] = eventPurchaseNFT.args;
-  console.log(_from, _to, _tokenId.toString(), _amount.toString());
-  console.log("Client 1 Bought the NFT has tokenId = ", _tokenId.toString());
-
-  // Sell NFT
-  const txSellSolely = await simpleCollectible.transferFrom(
-    signer.address,
-    client3.address,
-    2
-  );
-  await txSellSolely.wait(1);
-  console.log("Owner sell Client3 the tokenId =", 2);
-
-  // Owner approve Client 2 to manage tokenId = 1
-  const txApproveNFT = await simpleCollectible.approve(client2.address, 1);
-  const rcApproveNFT = await txApproveNFT.wait(1);
-  const eventApproveNFT = rcApproveNFT.events.find(
-    (event) => event.event === "Approval"
-  );
-  const [owner, approved, tokenId] = eventApproveNFT.args;
-  console.log(owner, approved, tokenId.toString());
+  // Signer tranfer to each client some Tokens
+  await stanToken.transfer(client1.address, ethers.utils.parseEther("20.0"));
   console.log(
-    "Owner approve Client 2 to manage the NFT has tokenId = ",
-    tokenId.toString()
+    `Balance Of ${client1.address}:`,
+    (await stanToken.balanceOf(client1.address)).toString()
+  );
+  await stanToken.transfer(client2.address, ethers.utils.parseEther("30.0"));
+  console.log(
+    `Balance Of ${client2.address}:`,
+    (await stanToken.balanceOf(client2.address)).toString()
+  );
+  await stanToken.transfer(artist.address, ethers.utils.parseEther("40.0"));
+  console.log(
+    `Balance Of ${artist.address}:`,
+    (await stanToken.balanceOf(artist.address)).toString()
   );
 
-  // Client 2 sell tokenId = 1 to Client 3 through authorization of signer
-  const txSellNFT = await simpleCollectible
-    .connect(client2)
-    .transferFrom(signer.address, client3.address, 1);
-  const rcSellNFT = await txSellNFT.wait(1);
-  const eventSellNFT = rcSellNFT.events.find(
-    (event) => event.event === "Transfer"
+  // Mint NFT
+  const tx_0 = await stanNFT.createCollectible(simple_token_uri[0]);
+  await tx_0.wait(1);
+  const tx_1 = await stanNFT.createCollectible(simple_token_uri[1]);
+  await tx_1.wait(1);
+  const tx_2 = await stanNFT.createCollectible(simple_token_uri[2]);
+  await tx_2.wait(1);
+  const tx_3 = await stanNFT.createCollectible(simple_token_uri[3]);
+  await tx_3.wait(1);
+
+  // Signer transfer NFT has tokenId = 1 to artist
+  await stanNFT.transferFrom(signer.address, stanNFT.address, 0);
+  await stanNFT.transferFrom(signer.address, artist.address, 1);
+  await stanNFT.transferFrom(signer.address, stanNFT.address, 2);
+  await stanNFT.transferFrom(signer.address, stanNFT.address, 3);
+
+  // Get all NFTs owned by stanNFT
+  const totalNFTstanNFT = (await stanNFT.balanceOf(stanNFT.address)).toString();
+  const NFTstanNFT = [];
+  for (let i = 0; i < totalNFTstanNFT; i++) {
+    const tokenId = await stanNFT.tokenOfOwnerByIndex(stanNFT.address, i);
+    const token = await stanNFT.tokenURI(tokenId);
+    NFTstanNFT.push(token);
+  }
+  console.log("Signer NFTs owns these NFTs:", NFTstanNFT);
+
+  // Get all NFTs
+  const totalNFTs = (await stanNFT.totalSupply()).toString();
+  const NFTs = [];
+  for (let i = 0; i < totalNFTs; i++) {
+    const tokenId = await stanNFT.tokenByIndex(i);
+    const token = await stanNFT.tokenURI(tokenId);
+    NFTs.push(token);
+  }
+  console.log("All NFT of the contract is", NFTs);
+
+  // Script #1: Client 1 aution in Aution having autionId = 1 with 0.1 Token
+  // Client 1 approve 10 Token for StanNFT
+  await stanToken
+    .connect(client1)
+    .approve(stanNFT.address, ethers.utils.parseEther("10.0"));
+  console.log(
+    "Client 1 has approved stanNFT the money is",
+    (await stanToken.allowance(client1.address, stanNFT.address)).toString()
   );
-  const [from, to] = eventSellNFT.args;
-  console.log(from, to, 1);
-  console.log("Client 2 sold Client 3 the NFT has tokenId = ", 1);
+  
+  // Backend proceed service aution
+  const txAution = await stanNFT.aution(
+    client1.address,
+    1,
+    ethers.utils.parseEther("8.0")
+  );
+
+  console.log(
+    "The new balance of stanNFT is",
+    (await stanToken.balanceOf(stanNFT.address)).toString()
+  );
+
+  const rcAution = await txAution.wait(1);
+  const eventApproveNFT = rcAution.events.find(
+    // Catch event Aution
+    (event) => event.event === "Aution"
+  );
+  const [_sender, _bidnumer, _autionId] = eventApproveNFT.args;
+  console.log(
+    `${_sender} aution successfully ${_bidnumer} with AutionId ${_autionId}`
+  );
+
+  // Script #2: Backend inform client 1 is the winner
+  // Artist approve NFT has tokenId = 1 to stanNFT
+  await stanNFT
+    .connect(artist)
+    .transferFrom(artist.address, stanNFT.address, 1);
+  // GetWinner
+  const txGetWinner = await stanNFT.getWinner(
+    client1.address,
+    artist.address,
+    ethers.utils.parseEther("8.0"),
+    1,
+    1
+  );
+
+  const rcGetWinner = await txGetWinner.wait(1);
+  const eventGetWinner = rcGetWinner.events.find(
+    // Catch event Aution
+    (event) => event.event === "Winner"
+  );
+  const [_winner, _tokenId, _artist, _bidNumber] = eventGetWinner.args;
+  const balanceOfWinner = await stanToken.balanceOf(client1.address);
+
+  console.log(
+    `The winner is ${_winner} has won the NFT has id ${_tokenId} from ${_artist} artist with ${_bidNumber} bidding money and the balance remain of winner is ${balanceOfWinner}`
+  );
 }
 
 main()
