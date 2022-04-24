@@ -9,6 +9,7 @@ const simple_token_uri = [
 ];
 
 LINKTOKEN = "0xa36085F69e2889c224210F603D836748e7dC0088";
+const _price = ethers.utils.parseEther("0.1");
 
 async function main() {
   const [signer, client1, client2, artist] = await ethers.getSigners();
@@ -41,13 +42,13 @@ async function main() {
   );
 
   // Mint NFT
-  const tx_0 = await stanNFT.createCollectible(simple_token_uri[0]);
+  const tx_0 = await stanNFT.createCollectible(simple_token_uri[0], _price);
   await tx_0.wait(1);
-  const tx_1 = await stanNFT.createCollectible(simple_token_uri[1]);
+  const tx_1 = await stanNFT.createCollectible(simple_token_uri[1], _price);
   await tx_1.wait(1);
-  const tx_2 = await stanNFT.createCollectible(simple_token_uri[2]);
+  const tx_2 = await stanNFT.createCollectible(simple_token_uri[2], _price);
   await tx_2.wait(1);
-  const tx_3 = await stanNFT.createCollectible(simple_token_uri[3]);
+  const tx_3 = await stanNFT.createCollectible(simple_token_uri[3], _price);
   await tx_3.wait(1);
 
   // Signer transfer NFT has tokenId = 1 to artist
@@ -85,7 +86,7 @@ async function main() {
     "Client 1 has approved stanNFT the money is",
     (await stanToken.allowance(client1.address, stanNFT.address)).toString()
   );
-  
+
   // Backend proceed service aution
   const txAution = await stanNFT.aution(
     client1.address,
