@@ -6,6 +6,7 @@ const simple_token_uri = [
   "https://ipfs.io/ipfs/Qmd9MCGtdVz2miNumBHDbvj8bigSgTwnr4SbyH6DNnpWdt?filename=1-SHIBA_INU.json",
   "https://ipfs.io/ipfs/Qmd9MCGtdVz2miNumBHDbvj8bigSgTwnr4SbyH6DNnpWdt?filename=2-ST_BERNARD.json",
   "https://ipfs.io/ipfs/Qmd9MCGtdVz2miNumBHDbvj8bigSgTwnr4SbyH6DNnpWdt?filename=2-ST_BERNARD.json",
+  "https://ipfs.io/ipfs/Qmd9MCGtdVz2miNumBHDbvj8bigSgTwnr4SbyH6DNnpWdt?filename=2-ST_BERNARD.json",
 ];
 
 const _bidNumber = ethers.utils.parseEther("8.0");
@@ -44,12 +45,15 @@ describe("StanNFT", () => {
     await tx_2.wait(1);
     const tx_3 = await stanNFT.createCollectible(simple_token_uri[3], _price);
     await tx_3.wait(1);
+    const tx_4 = await stanNFT.createCollectible(simple_token_uri[4], _price);
+    await tx_4.wait(1);
 
     // Signer transfer NFT has tokenId = 1 to artist
     await stanNFT.transferFrom(signer.address, stanNFT.address, 0);
     await stanNFT.transferFrom(signer.address, artist.address, 1);
     await stanNFT.transferFrom(signer.address, artist.address, 2);
     await stanNFT.transferFrom(signer.address, stanNFT.address, 3);
+    await stanNFT.transferFrom(signer.address, artist.address, 4);
 
     stanNFTInstance = stanNFT;
   });
@@ -264,6 +268,53 @@ describe("StanNFT", () => {
         expect(
           stanNFTInstance.buy(client1.address, _artistTokenId, artist.address)
         ).to.be.revertedWith("Not enough money to proceed");
+      });
+    });
+  });
+
+  describe("Purchase", function () {
+    let beforeTokenBuyer;
+    let beforeTokenArtist;
+
+    before(async () => {
+      await stanNFTInstance
+        .connect(artist)
+        .transferFrom(artist.address, stanNFTInstance.address, 4);
+
+      await stanToken
+        .connect(client2)
+        .approve(stanNFTInstance.address, ethers.utils.parseEther("20.0"));
+
+      beforeTokenArtist = await stanToken.balanceOf(artist.address);
+      beforeTokenBuyer = await stanToken.balanceOf(client2.address);
+
+      await stanNFTInstance.purchase(
+        client2.address,
+        artist.address,
+        ethers.utils.parseEther("20.0"),
+        4
+      );
+    });
+
+    describe("Client 2 want to buy NFT that has tokenId = 4 from artist with 20 Tokens", function () {
+      it("The balance of buyer should be subtracted properly", async function () {
+        afterTokenBuyer = await stanToken.balanceOf(client2.address);
+
+        expect(
+          parseInt(ethers.utils.formatEther(afterTokenBuyer)) + parseInt(20)
+        ).to.equal(parseInt(ethers.utils.formatEther(beforeTokenBuyer)));
+      });
+
+      it("The buyer should own NFT has tokenId = 4", async function () {
+        expect(await stanNFTInstance.ownerOf(4)).to.equal(client2.address);
+      });
+
+      it("The artist should receive 20 tokens", async function () {
+        const afterTokenArtist = await stanToken.balanceOf(artist.address);
+
+        expect(
+          parseInt(ethers.utils.formatEther(beforeTokenArtist)) + parseInt(20)
+        ).to.equal(parseInt(ethers.utils.formatEther(afterTokenArtist)));
       });
     });
   });

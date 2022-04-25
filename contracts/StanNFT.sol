@@ -18,13 +18,6 @@ contract StanNFT is ERC721Enumerable, ERC721URIStorage, Ownable {
     address public tokenStanAddress;
     StanTokenInterface private tokenStan;
 
-    event Purchase(
-        address _from,
-        address _to,
-        uint256 _tokenId,
-        uint256 _amounty
-    );
-
     event Winner(
         address _winner,
         uint256 _tokenId,
@@ -32,11 +25,38 @@ contract StanNFT is ERC721Enumerable, ERC721URIStorage, Ownable {
         uint256 _bidNumber
     );
 
+    event Purchase(
+        address _buyer,
+        address _seller,
+        uint160 _tokenId,
+        uint256 _price
+    );
+
     event Buy(address _buyer, uint160 _tokenId, uint256 _tokenIdToPrice);
     event Aution(address _sender, uint256 _bidnumer, uint160 _autionId);
 
     constructor(address _tokenStan) ERC721("Stan", "STAN") {
         tokenStan = StanTokenInterface(_tokenStan);
+    }
+
+    modifier checkMoneyToProceed(
+        address _from,
+        address _to,
+        uint256 _amount
+    ) {
+        require(
+            tokenStan.transferFrom(_from, _to, _amount),
+            "Not enough money to proceed"
+        );
+        _;
+    }
+
+    modifier checkNFTOwnerShip(address _owner, uint160 _tokenId) {
+        require(
+            _isApprovedOrOwner(address(this), _tokenId),
+            "The caller didn't transfer the NFT to StanNFT smart contract"
+        );
+        _;
     }
 
     function Decimals() public pure returns (uint256) {
@@ -67,6 +87,22 @@ contract StanNFT is ERC721Enumerable, ERC721URIStorage, Ownable {
         }
     }
 
+    function purchase(
+        address _buyer,
+        address _seller,
+        uint256 _amount,
+        uint160 _tokenId
+    )
+        external
+        onlyOwner
+        checkMoneyToProceed(_buyer, address(this), _amount)
+        checkNFTOwnerShip(address(this), _tokenId)
+    {
+        _transfer(address(this), _buyer, _tokenId);
+        tokenStan.transfer(_seller, _amount);
+        emit Purchase(_buyer, _seller, _tokenId, TokenIdToPrice[_tokenId]);
+    }
+
     function aution(
         address _user,
         uint160 _autionId,
@@ -81,12 +117,7 @@ contract StanNFT is ERC721Enumerable, ERC721URIStorage, Ownable {
         address _user,
         uint160 _tokenId,
         address _artist
-    ) external onlyOwner {
-        require(
-            _isApprovedOrOwner(address(this), _tokenId),
-            "The artist didn't transfer the NFT to StanNFT smart contract"
-        );
-
+    ) external onlyOwner checkNFTOwnerShip(address(this), _tokenId) {
         checkBalance(_user, TokenIdToPrice[_tokenId]);
         balanceOfFan[_user] = 0;
         _transfer(address(this), _user, _tokenId);
@@ -102,17 +133,13 @@ contract StanNFT is ERC721Enumerable, ERC721URIStorage, Ownable {
         address _winner,
         address _artist,
         uint256 _bidNumber,
-        uint256 _tokenId,
+        uint160 _tokenId,
         uint160 _autionId
-    ) external onlyOwner {
+    ) external onlyOwner checkNFTOwnerShip(address(this), _tokenId) {
         require(
             autionInformation[_autionId][_winner] > 0 &&
                 autionInformation[_autionId][_winner] == _bidNumber,
             "Invalid winner"
-        );
-        require(
-            _isApprovedOrOwner(address(this), _tokenId),
-            "The artist didn't transfer the NFT to StanNFT smart contract"
         );
 
         // minus winner balance
